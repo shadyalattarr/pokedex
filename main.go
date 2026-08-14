@@ -2,11 +2,10 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
+
+	"github.com/shadyalattarr/pokedex/internal/pokeapi"
 )
 
 /// panic last and first page and the moduel of netowrking
@@ -20,18 +19,6 @@ type cliCommand struct {
 type config struct {
 	Next     *string
 	Previous *string
-}
-
-type LocationArea struct {
-	Name string  `json:"name"`
-	Url  *string `json:"url"`
-}
-
-type LocationAreaResponse struct {
-	Count    int            `json:"count"` // json tags
-	Next     *string        `json:"next"`
-	Previous *string        `json:"previous"`
-	Results  []LocationArea `json:"results"`
 }
 
 var supportedCommands map[string]cliCommand
@@ -116,95 +103,40 @@ func commandHelp(config *config) error {
 }
 
 func commandMap(config *config) error {
-
-	// piping and receiving the response
-	req, err := http.NewRequest("GET", *config.Next, nil)
+	loc_area_response, err := pokeapi.GetLocationAreas(*config.Next)
 	if err != nil {
-		return fmt.Errorf("Failed to create request: %w", err)
+		return fmt.Errorf("Error with GetLocationAreas: %w", err)
 	}
-	req.Header.Set("User-Agent", "PokedexCLI/1.0 - shady")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-
-	// resp, err := http.Get(*config.Next)
-	if err != nil {
-		return fmt.Errorf("Failed to GET location areas: %w", err)
-	}
-	defer resp.Body.Close()
-
-	//resp is RAW TEXT:  --- we need ot convert it to []Bytes and then to go struct --- unmarshal method
-	// else we take resp.Body -> as a stream of text and send it to newDecoder
-
-	responseBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Error reading response body: %w", err)
-	}
-
-	var locationAreaResponse LocationAreaResponse
-
-	err = json.Unmarshal(responseBytes, &locationAreaResponse)
-	if err != nil {
-		return fmt.Errorf("Error unmarshaling: %w", err)
-	}
-
 	// printing
-	for _, result := range locationAreaResponse.Results {
+	for _, result := range loc_area_response.Results {
 		fmt.Println(result.Name)
 	}
 
 	// next and prev
 	*config.Previous = *config.Next
-	if locationAreaResponse.Next != nil {
+	if loc_area_response.Next != nil {
 		// last page, if you try to go next, just stay
-		*config.Next = *locationAreaResponse.Next
+		*config.Next = *loc_area_response.Next
 	}
 
 	return nil
 }
 
 func commandMapb(config *config) error {
-
-	// piping and receiving the response
-	req, err := http.NewRequest("GET", *config.Previous, nil)
+	loc_area_response, err := pokeapi.GetLocationAreas(*config.Previous)
 	if err != nil {
-		return fmt.Errorf("Failed to create request: %w", err)
-	}
-	req.Header.Set("User-Agent", "PokedexCLI/1.0")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-
-	// resp, err := http.Get(*config.Previous)
-	if err != nil {
-		return fmt.Errorf("Failed to GET location areas: %w", err)
-	}
-	defer resp.Body.Close()
-
-	//resp is RAW TEXT:  --- we need ot convert it to []Bytes and then to go struct --- unmarshal method
-	// else we take resp.Body -> as a stream of text and send it to newDecoder
-
-	responseBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Error reading response body: %w", err)
-	}
-
-	var locationAreaResponse LocationAreaResponse
-
-	err = json.Unmarshal(responseBytes, &locationAreaResponse)
-	if err != nil {
-		return fmt.Errorf("Error unmarshaling: %w", err)
+		return fmt.Errorf("Error with GetLocationAreas: %w", err)
 	}
 
 	// printing
-	for _, result := range locationAreaResponse.Results {
+	for _, result := range loc_area_response.Results {
 		fmt.Println(result.Name)
 	}
 
 	// next and prev
 	*config.Next = *config.Previous
-	if locationAreaResponse.Previous != nil {
-		*config.Previous = *locationAreaResponse.Previous
+	if loc_area_response.Previous != nil {
+		*config.Previous = *loc_area_response.Previous
 	}
 	return nil
 }
