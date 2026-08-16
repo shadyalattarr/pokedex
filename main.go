@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/shadyalattarr/pokedex/internal/pokeapi"
 )
@@ -24,12 +25,15 @@ type config struct {
 var supportedCommands map[string]cliCommand
 
 var cfg config
+var pokeClient pokeapi.PokeApiClient
 
 func init() { // init runs before main
 	// assigning memory dynamically
 	firstPage := "https://pokeapi.co/api/v2/location-area"
 	cfg.Next = &firstPage // or cfg.Next = new(string)
 	cfg.Previous = new(string)
+
+	pokeClient = pokeapi.NewClient(5 * time.Second)
 
 	supportedCommands = map[string]cliCommand{
 		"exit": {
@@ -103,7 +107,7 @@ func commandHelp(config *config) error {
 }
 
 func commandMap(config *config) error {
-	loc_area_response, err := pokeapi.GetLocationAreas(*config.Next)
+	loc_area_response, err := pokeClient.GetLocationAreas(*config.Next)
 	if err != nil {
 		return fmt.Errorf("Error with GetLocationAreas: %w", err)
 	}
@@ -123,7 +127,7 @@ func commandMap(config *config) error {
 }
 
 func commandMapb(config *config) error {
-	loc_area_response, err := pokeapi.GetLocationAreas(*config.Previous)
+	loc_area_response, err := pokeClient.GetLocationAreas(*config.Previous)
 	if err != nil {
 		return fmt.Errorf("Error with GetLocationAreas: %w", err)
 	}
