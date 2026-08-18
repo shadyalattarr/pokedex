@@ -14,7 +14,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config *config) error
+	callback    func(config *config, args ...string) error
 }
 
 type config struct {
@@ -56,6 +56,11 @@ func init() { // init runs before main
 			description: "Displays the previous 20 locations",
 			callback:    commandMapb,
 		},
+		"explore": {
+			name:        "explore",
+			description: "Explores the given location area",
+			callback:    commandExplore,
+		},
 	}
 }
 
@@ -80,8 +85,8 @@ func main() {
 			fmt.Println("Unknown Command")
 			continue
 		}
-
-		err := cmd.callback(&cfg)
+		// problem is first word is always loc area now
+		err := cmd.callback(&cfg, cmdWords[1:]...)
 		if err != nil {
 			fmt.Printf("ERROR: %v\n", err)
 			continue
@@ -90,13 +95,13 @@ func main() {
 
 }
 
-func commandExit(config *config) error {
+func commandExit(config *config, args ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(config *config) error {
+func commandHelp(config *config, args ...string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println()
@@ -106,7 +111,7 @@ func commandHelp(config *config) error {
 	return nil
 }
 
-func commandMap(config *config) error {
+func commandMap(config *config, args ...string) error {
 	loc_area_response, err := pokeClient.GetLocationAreas(*config.Next)
 	if err != nil {
 		return fmt.Errorf("Error with GetLocationAreas: %w", err)
@@ -126,7 +131,7 @@ func commandMap(config *config) error {
 	return nil
 }
 
-func commandMapb(config *config) error {
+func commandMapb(config *config, args ...string) error {
 	loc_area_response, err := pokeClient.GetLocationAreas(*config.Previous)
 	if err != nil {
 		return fmt.Errorf("Error with GetLocationAreas: %w", err)
@@ -141,6 +146,32 @@ func commandMapb(config *config) error {
 	*config.Next = *config.Previous
 	if loc_area_response.Previous != nil {
 		*config.Previous = *loc_area_response.Previous
+	}
+	return nil
+}
+
+func commandExplore(config *config, args ...string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("command explore requires only one argument: the location area:\n example: explore <location-area>")
+	}
+	locArea := args[0]
+
+	url := "https://pokeapi.co/api/v2/location-area/" + locArea
+	fmt.Printf("Exploring %s ...\n", locArea)
+	locationAreaInfoResp, err := pokeClient.GetLocationAreaInfo(url)
+	if err != nil {
+		return fmt.Errorf("Error with GetLocationAreaInfo: %w", err)
+	}
+
+	// printing
+	if len(locationAreaInfoResp.PokemonEncounters) != 0 {
+		fmt.Println("Found Pokemon:")
+	} else {
+		fmt.Println("No Pokemon were found!")
+	}
+
+	for _, pokeEncounter := range locationAreaInfoResp.PokemonEncounters {
+		fmt.Println("- ", pokeEncounter.Pokemon.Name)
 	}
 	return nil
 }
