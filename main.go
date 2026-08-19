@@ -71,6 +71,16 @@ func init() { // init runs before main
 			description: "Catch a pokemon",
 			callback:    commandCatch,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "Inspect information about pokemon in your pokedex",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "List the pokemon ou have in your pokedex",
+			callback:    commandPokedex,
+		},
 	}
 }
 
@@ -106,12 +116,18 @@ func main() {
 }
 
 func commandExit(config *config, args ...string) error {
+	if len(args) != 0 {
+		return fmt.Errorf("command exit requires zero arguments.")
+	}
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
 func commandHelp(config *config, args ...string) error {
+	if len(args) != 0 {
+		return fmt.Errorf("command help requires zero arguments.")
+	}
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println()
@@ -208,8 +224,53 @@ func commandCatch(config *config, args ...string) error {
 	if randomRoll < threshold {
 		pokedex[pokemon] = pokemonResp
 		fmt.Printf("%v was caught!\n", pokemon)
+		fmt.Println("You may now inspect it with the inspect command.")
 	} else {
 		fmt.Printf("%v escaped!\n", pokemon)
+	}
+	return nil
+}
+
+func commandInspect(config *config, args ...string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("command inspect requires only one argument: the pokemon:\n example: inspect <pokemon-name>")
+	}
+	pokemon := args[0]
+	pokemonResp, ok := pokedex[pokemon]
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+	} else {
+		printPokemonInfo(pokemonResp)
+	}
+	return nil
+}
+
+func printPokemonInfo(pokemonResp pokeapi.PokemonResponse) {
+	fmt.Printf("Name: %v\n", pokemonResp.Name)
+	fmt.Printf("Height: %v\n", pokemonResp.Height)
+	fmt.Printf("Weight: %v\n", pokemonResp.Weight)
+	fmt.Println("Stats:")
+	for _, statistic := range pokemonResp.Stats {
+		fmt.Printf("\t-%v: %v\n", statistic.Stat.Name, statistic.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, type_ := range pokemonResp.Types {
+		fmt.Printf("\t-%v\n", type_.Type.Name)
+	}
+}
+
+func commandPokedex(config *config, args ...string) error {
+	if len(args) != 0 {
+		return fmt.Errorf("command pokedex requires zero arguments.")
+	}
+
+	if len(pokedex) == 0 {
+		fmt.Println("You have no pokemon in your pokedex!")
+	} else {
+		fmt.Println("Your Pokedex:")
+		for k := range pokedex {
+			fmt.Printf("\t- %v\n", k)
+		}
 	}
 	return nil
 }

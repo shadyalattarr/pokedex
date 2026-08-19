@@ -70,18 +70,12 @@ type PokemonResponse struct {
 	} `json:"cries"`
 	Forms       []Resource `json:"forms"`
 	GameIndices []struct {
-		GameIndex int `json:"game_index"`
-		Version   struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"version"`
+		GameIndex int      `json:"game_index"`
+		Version   Resource `json:"version"`
 	} `json:"game_indices"`
 	Height    int `json:"height"`
 	HeldItems []struct {
-		Item struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"item"`
+		Item           Resource `json:"item"`
 		VersionDetails []struct {
 			Rarity  int `json:"rarity"`
 			Version struct {
@@ -94,10 +88,7 @@ type PokemonResponse struct {
 	IsDefault              bool   `json:"is_default"`
 	LocationAreaEncounters string `json:"location_area_encounters"`
 	Moves                  []struct {
-		Move struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"move"`
+		Move                Resource `json:"move"`
 		VersionGroupDetails []struct {
 			LevelLearnedAt  int `json:"level_learned_at"`
 			MoveLearnMethod struct {
@@ -119,10 +110,7 @@ type PokemonResponse struct {
 			IsHidden bool `json:"is_hidden"`
 			Slot     int  `json:"slot"`
 		} `json:"abilities"`
-		Generation struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"generation"`
+		Generation Resource `json:"generation"`
 	} `json:"past_abilities"`
 	PastStats []any    `json:"past_stats"`
 	PastTypes []any    `json:"past_types"`
@@ -324,19 +312,13 @@ type PokemonResponse struct {
 		} `json:"versions"`
 	} `json:"sprites"`
 	Stats []struct {
-		BaseStat int `json:"base_stat"`
-		Effort   int `json:"effort"`
-		Stat     struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"stat"`
+		BaseStat int      `json:"base_stat"`
+		Effort   int      `json:"effort"`
+		Stat     Resource `json:"stat"`
 	} `json:"stats"`
 	Types []struct {
-		Slot int `json:"slot"`
-		Type struct {
-			Name string `json:"name"`
-			URL  string `json:"url"`
-		} `json:"type"`
+		Slot int      `json:"slot"`
+		Type Resource `json:"type"`
 	} `json:"types"`
 	Weight int `json:"weight"`
 }
