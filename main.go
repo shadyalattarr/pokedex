@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"math/rand"
+
 	"github.com/shadyalattarr/pokedex/internal/pokeapi"
 )
 
@@ -23,6 +25,7 @@ type config struct {
 }
 
 var supportedCommands map[string]cliCommand
+var pokedex map[string]pokeapi.PokemonResponse
 
 var cfg config
 var pokeClient pokeapi.PokeApiClient
@@ -34,6 +37,8 @@ func init() { // init runs before main
 	cfg.Previous = new(string)
 
 	pokeClient = pokeapi.NewClient(5 * time.Second)
+
+	pokedex = map[string]pokeapi.PokemonResponse{} // initialized empty
 
 	supportedCommands = map[string]cliCommand{
 		"exit": {
@@ -60,6 +65,11 @@ func init() { // init runs before main
 			name:        "explore",
 			description: "Explores the given location area",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Catch a pokemon",
+			callback:    commandCatch,
 		},
 	}
 }
@@ -172,6 +182,34 @@ func commandExplore(config *config, args ...string) error {
 
 	for _, pokeEncounter := range locationAreaInfoResp.PokemonEncounters {
 		fmt.Println("- ", pokeEncounter.Pokemon.Name)
+	}
+	return nil
+}
+
+func commandCatch(config *config, args ...string) error {
+	if len(args) != 1 {
+		return fmt.Errorf("command catch requires only one argument: the pokemon:\n example: explore <pokemon-name>")
+	}
+	pokemon := args[0]
+	fmt.Printf("Throwing a Pokeball at %v...\n", pokemon)
+
+	url := "https://pokeapi.co/api/v2/pokemon/" + pokemon
+
+	pokemonResp, err := pokeClient.GetPokemonInfo(url)
+	if err != nil {
+		return fmt.Errorf("Error with GetPokemonInfo: %w", err)
+	}
+
+	// printing
+	baseXP := pokemonResp.BaseExperience
+	randomRoll := rand.Intn(baseXP)
+	threshold := 40
+
+	if randomRoll < threshold {
+		pokedex[pokemon] = pokemonResp
+		fmt.Printf("%v was caught!\n", pokemon)
+	} else {
+		fmt.Printf("%v escaped!\n", pokemon)
 	}
 	return nil
 }

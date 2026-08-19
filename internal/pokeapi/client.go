@@ -16,35 +16,6 @@ func NewClient(cacheInterval time.Duration) PokeApiClient {
 	}
 }
 
-func (pokeClient PokeApiClient) GetLocationAreas(url string) (LocationAreaResponse, error) {
-	responseBytes, err := pokeClient.getResponseBytes(url)
-	if err != nil {
-		return LocationAreaResponse{}, fmt.Errorf("Error with getting response bytes: %v", err)
-	}
-	var loc_area_response LocationAreaResponse
-
-	err = json.Unmarshal(responseBytes, &loc_area_response)
-	if err != nil {
-		return LocationAreaResponse{}, fmt.Errorf("Error unmarshaling: %w", err)
-	}
-	return loc_area_response, nil
-}
-
-func (pokeClient PokeApiClient) GetLocationAreaInfo(url string) (LocationAreaInformationResponse, error) {
-	responseBytes, err := pokeClient.getResponseBytes(url)
-	if err != nil {
-		return LocationAreaInformationResponse{}, fmt.Errorf("Error with getting response bytes: %v", err)
-	}
-	var loc_area_info_response LocationAreaInformationResponse
-
-	err = json.Unmarshal(responseBytes, &loc_area_info_response)
-	if err != nil {
-		return LocationAreaInformationResponse{}, fmt.Errorf("Error unmarshaling: %w", err)
-	}
-	return loc_area_info_response, nil
-
-}
-
 func (pokeClient PokeApiClient) getResponseBytes(url string) ([]byte, error) {
 	var responseBytes []byte
 	responseBytes, ok := pokeClient.cache.Get(url)
@@ -75,4 +46,33 @@ func (pokeClient PokeApiClient) getResponseBytes(url string) ([]byte, error) {
 		pokeClient.cache.Add(url, responseBytes)
 	}
 	return responseBytes, nil
+}
+
+// Standalone generic helper function (unexported)
+func fetchAndUnmarshal[T PokeAPIResponse](client PokeApiClient, url string) (T, error) {
+	var result T
+	responseBytes, err := client.getResponseBytes(url)
+	if err != nil {
+		return result, fmt.Errorf("Error with getting response bytes: %v", err)
+	}
+
+	err = json.Unmarshal(responseBytes, &result)
+	if err != nil {
+		return result, fmt.Errorf("Error unmarshaling: %w", err)
+	}
+
+	return result, nil
+}
+
+// Your specific methods now become very clean one-liners:
+func (pokeClient PokeApiClient) GetLocationAreas(url string) (LocationAreaResponse, error) {
+	return fetchAndUnmarshal[LocationAreaResponse](pokeClient, url)
+}
+
+func (pokeClient PokeApiClient) GetLocationAreaInfo(url string) (LocationAreaInformationResponse, error) {
+	return fetchAndUnmarshal[LocationAreaInformationResponse](pokeClient, url)
+}
+
+func (pokeClient PokeApiClient) GetPokemonInfo(url string) (PokemonResponse, error) {
+	return fetchAndUnmarshal[PokemonResponse](pokeClient, url)
 }
